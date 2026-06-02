@@ -1,0 +1,22 @@
+# Get current active namespace
+NAMESPACE=$(oc config view --minify -o jsonpath='{..namespace}')
+NAMESPACE=${NAMESPACE:-default}
+
+echo "Using Namespace: $NAMESPACE"
+echo "--------------------------------------"
+
+oc get deploy -n "$NAMESPACE" --no-headers | awk '{print $1, $2}' | \
+while read -r deploy ready; do
+
+    ready_count=$(echo "$ready" | cut -d'/' -f1)
+    desired_count=$(echo "$ready" | cut -d'/' -f2)
+
+    if [[ "$ready_count" != "$desired_count" ]]; then
+        echo "❌ Deployment NOT healthy"
+        echo "Namespace: $NAMESPACE"
+        echo "Deployment: $deploy"
+        echo "Ready: $ready_count / $desired_count"
+        echo "--------------------------------------"
+    fi
+
+done
