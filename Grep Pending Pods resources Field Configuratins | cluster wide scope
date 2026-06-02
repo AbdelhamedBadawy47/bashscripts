@@ -1,0 +1,9 @@
+oc get pods -A -o json | jq -r '
+.items[]
+| select(.status.phase=="Pending")
+| "\(.metadata.namespace) \(.metadata.name)"
+' | while read -r ns pod; do
+    echo "Pod: $pod | Namespace: $ns"
+    oc get pod "$pod" -n "$ns" -o json | jq '.spec.containers[].resources'
+    echo "--------------------------------------"
+done
