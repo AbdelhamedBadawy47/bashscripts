@@ -1,3 +1,27 @@
+
+echo "phase1 check nodes healthy or not"
+oc get nodes --no-headers | while read -r name status roles age version; do
+    echo "Node: $name | Status: $status"
+done
+
+#check nodes health and ouput the status
+
+oc get nodes --no-headers | while read -r name status _; do
+    case "$status" in
+        Ready)
+            echo "✅ Node: $name is Healthy"
+            ;;
+        NotReady)
+            echo "❌ Node: $name is NotReady"
+            ;;
+        *)
+            echo "⚠️ Node: $name has unknown status: $status"
+            ;;
+    esac
+done
+------------------------
+# validate cpu and memory thresholds 
+echo "phase 2 , validate the CPU and MEM threshold"
 oc get nodes --no-headers | while read -r name status roles age version; do
     echo "Node: $name | Status: $status"
 done
