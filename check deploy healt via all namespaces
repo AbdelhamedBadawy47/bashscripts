@@ -1,0 +1,19 @@
+# Get current active namespace
+NAMESPACE=$(oc config view --minify -o jsonpath='{..namespace}')
+NAMESPACE=${NAMESPACE:-default}
+
+echo "Using Namespace: $NAMESPACE"
+echo "--------------------------------------"
+
+oc get deploy -n "$NAMESPACE" -o json | jq -r '
+.items[] |
+"\(.metadata.name) \(.status.readyReplicas // 0) \(.spec.replicas)"
+' | while read -r deploy ready desired; do
+
+    if [[ "$ready" != "$desired" ]]; then
+        echo "❌ Not Ready: $deploy ($ready/$desired)"
+    else
+        echo "✅ Healthy: $deploy ($ready/$desired)"
+    fi
+
+done
