@@ -1,0 +1,16 @@
+
+#check nodes health and ouput the status
+
+oc get nodes --no-headers | while read -r name status _; do
+    case "$status" in
+        Ready)
+            echo "✅ Node: $name is Healthy"
+            ;;
+        NotReady)
+            echo "❌ Node: $name is NotReady"
+            ;;
+        *)
+            echo "⚠️ Node: $name has unknown status: $status"
+            ;;
+    esac
+done
