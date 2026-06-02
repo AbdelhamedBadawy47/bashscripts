@@ -15,11 +15,11 @@ oc get nodes --no-headers | while read -r name status _; do
             echo "❌ Node: $name is NotReady"
             ;;
         *)
-            echo "⚠️ Node: $name has unknown status: $status"
+            echo "⚠️ Node: $name has the status: $status"
             ;;
     esac
 done
-------------------------
+echo '------------------------'
 # validate cpu and memory thresholds 
 echo "phase 2 , validate the CPU and MEM threshold"
 oc get nodes --no-headers | while read -r name status roles age version; do
@@ -40,4 +40,39 @@ oc get nodes --no-headers | while read -r name status _; do
             echo "⚠️ Node: $name has unknown status: $status"
             ;;
     esac
+done
+declare -A cpu mem
+
+# Load usage
+while read -r name cpu_raw mem_raw; do
+    cpu["$name"]="$cpu_raw"
+    mem["$name"]="$mem_raw"
+done < <(oc adm top nodes --no-headers | awk '{print $1, $2, $5}')
+
+# Process nodes
+oc get nodes --no-headers | awk '{print $1, $2}' | \
+while read -r name status; do
+
+    cpu_val="${cpu[$name]}"
+    mem_val="${mem[$name]%\%}"   # remove %
+
+    echo "Node: $name | Status: $status | CPU: ${cpu[$name]} | MEM: ${mem[$name]}"
+
+    # ✅ Convert CPU (remove 'm')
+    cpu_num="${cpu_val%m}"
+
+    # ✅ Threshold checks
+    if [[ "$cpu_num" =~ ^[0-9]+$ ]] && (( cpu_num > 2000 )); then
+        echo "🔥 High CPU usage!"
+    fi
+
+    if [[ "$mem_val" =~ ^[0-9]+$ ]] && (( mem_val > 80 )); then
+        echo "🔥 High Memory usage!"
+    fi
+
+    if [[ "$status" != "Ready" ]]; then
+        echo "❌ Node not healthy!"
+    fi
+
+    echo "--------------------------------------"
 done
